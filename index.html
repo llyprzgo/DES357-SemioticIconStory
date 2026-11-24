@@ -141,36 +141,30 @@
       </a-marker>
 
       <a-marker type="pattern" url="assets/pattern-357 - Zine Icons-06.patt">
-        
-        <!-- Parent Entity: Handles the spinning spin (Y-axis) and the hopping motion -->
-        <a-entity position="0 0.5 0"
-                  animation__hop="property: position; from: 0 0.5 0; to: 0 1.2 0; dir: alternate; loop: true; dur: 1200; easing: easeInOutSine"
-                  animation__spin="property: rotation; to: 0 360 0; loop: true; dur: 3000; easing: linear">
-          
-          <!-- Child Entity: Tilts the text flat so it rotates horizontally like a rotor blade -->
-          <a-entity rotation="-90 0 0">
-            
-            <!-- Main Text -->
-            <a-text value="LILY IS AWESOME" 
-                    align="center" 
-                    color="#00FF88" 
-                    scale="2 2 2"
-                    side="double">
-            </a-text>
-
-            <!-- Shadow Text Layer for 3D depth -->
-            <a-text value="LILY" 
-                    align="center" 
-                    color="#003311" 
-                    position="0 0 -0.05"
-                    scale="2 2 2"
-                    side="double">
-            </a-text>
-
+        <!-- Monarch: gentle hover; one complete wingbeat every 2.4 seconds. -->
+        <a-entity position="0 0.65 0"
+                  animation__hover="property: position; from: 0 0.65 0; to: 0 0.82 0; dir: alternate; loop: true; dur: 2400; easing: easeInOutSine">
+          <a-entity rotation="-90 0 0" scale="0.85 0.85 0.85">
+            <!-- Wings pivot at the body rather than at their centers. -->
+            <a-entity rotation="0 -8 0"
+                      animation__flap="property: rotation; from: 0 -8 0; to: 0 -65 0; dir: alternate; loop: true; dur: 1200; easing: easeInOutSine">
+              <a-plane position="0.75 0 0" width="1.5" height="1.5"
+                       material="src: url(assets/monarch-wing.svg); transparent: true; alphaTest: 0.05; side: double; shader: flat"></a-plane>
+            </a-entity>
+            <a-entity rotation="0 8 0"
+                      animation__flap="property: rotation; from: 0 8 0; to: 0 65 0; dir: alternate; loop: true; dur: 1200; easing: easeInOutSine">
+              <a-plane position="-0.75 0 0" scale="-1 1 1" width="1.5" height="1.5"
+                       material="src: url(assets/monarch-wing.svg); transparent: true; alphaTest: 0.05; side: double; shader: flat"></a-plane>
+            </a-entity>
+            <!-- Body and antennae. -->
+            <a-sphere position="0 -0.12 0.025" scale="0.065 0.39 0.06" color="#191614"></a-sphere>
+            <a-sphere position="0 0.28 0.035" radius="0.085" color="#191614"></a-sphere>
+            <a-entity line="start: -0.03 0.32 0.04; end: -0.16 0.55 0.05; color: #191614"
+                      line__right="start: 0.03 0.32 0.04; end: 0.16 0.55 0.05; color: #191614"></a-entity>
+            <a-sphere position="-0.16 0.55 0.05" radius="0.022" color="#191614"></a-sphere>
+            <a-sphere position="0.16 0.55 0.05" radius="0.022" color="#191614"></a-sphere>
           </a-entity>
-          
         </a-entity>
-
       </a-marker>
 
       <a-entity camera></a-entity>
