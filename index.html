@@ -223,6 +223,71 @@
         }
       });
     </script>
+    <script>
+      // Icon 05: original SVG artwork, animated in three independent layers.
+      AFRAME.registerComponent('unreachable-target', {
+        init: function () {
+          const T = AFRAME.THREE;
+          this.marker = this.el.closest('a-marker');
+          this.wasVisible = false;
+          const artwork = ["<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"512\" height=\"512\" viewBox=\"0 0 216 216\"><defs>\n    <style>\n      .cls-1, .cls-2 {\n        fill: #231f20;\n      }\n\n      .cls-2 {\n        stroke: #231f20;\n        stroke-miterlimit: 10;\n        stroke-width: 3.51px;\n      }\n    </style>\n  </defs><path class=\"cls-1\" d=\"M32.59,240.32q-1.08-4.93-1.63-10.09-.27-2.58-.4-5.2c-.07-.73,0-2.11-.01-3.13v-3.05c-.03-3.83-.18-6.22-.2-8.35,0-.54.01-1.06.04-1.6.03-.28.02-.5.08-.85l.2-.72.15-.61.91-3.93c-.01-1.41.19-3.02.82-4.61.62-1.6,1.62-3.23,3.04-4.53,1.44-1.32,3.26-1.93,5.3-2.57l.39-.12c.1-.02,0-.05.23-.06l.47-.03,1.92-.15c1.34-.12,2.64-.21,3.99-.35,2.68-.26,5.36-.6,7.99-.98,5.28-.79,10.34-1.89,15.29-3.06,4.93-1.22,9.94-2.58,15.17-4.4l1.97-.71,2.01-.78,2.12-.87,2.14-.97c2.82-1.34,5.48-2.93,7.94-4.74,2.45-1.84,4.69-3.89,6.75-6.05,2.02-2.14,3.76-4.34,5.35-6.64.79-1.15,1.54-2.31,2.24-3.5.7-1.18,1.42-2.47,2.05-3.73,1.29-2.52,2.3-5.15,3.06-7.81.76-2.67,1.2-5.39,1.45-8.08.22-2.57.21-4.56.5-6.42.27-1.86.84-3.75,1.71-5.63.85-1.87,1.97-3.68,3.32-5.39,2.69-3.44,6.28-6.4,10.23-8.91-4.57,1-9.17,2.55-13.46,5.19-4.29,2.63-8.22,6.27-11.01,11.21-1.4,2.45-2.33,5-3.24,6.9-.87,1.79-1.84,3.48-2.99,5.02-1.16,1.53-2.43,2.93-3.82,4.17-.7.63-1.37,1.18-2.13,1.79-.76.6-1.54,1.17-2.32,1.71-1.56,1.07-3.2,2.03-4.79,2.77-1.55.7-3.12,1.29-4.69,1.71-1.59.4-3.19.63-4.77.69l-1.17.03h-.57s-.66,0-.66,0h-1.36s-1.42-.03-1.42-.03c-3.85-.11-8.03-.46-12.3-.95-4.26-.53-8.42-1.13-12.38-1.99-1.97-.43-3.92-.89-5.84-1.41-.96-.25-1.95-.55-2.92-.82l-1.53-.44-.39-.11c-.06-.03-.45-.09-.63-.13l-1.34-.28c-3.56-.76-7.21-1.41-10.89-1.69-3.68-.29-7.4-.15-11.08.48-7.33,1.34-14.46,4.22-21,8.34-6.57,4.1-12.52,9.49-17.74,15.7-1.21,1.43-2.23,2.66-3.29,4.02-1.02,1.32-2.02,2.66-2.92,3.91l-1.27,1.74c-.46.67-.99,1.49-1.47,2.24-.97,1.54-1.91,3.12-2.78,4.72-3.53,6.42-6.05,12.99-7.99,18.18l-1.4,3.74c-.46,1.24-.84,2.12-1.35,3.65q-1.41,4.19-2.62,8.48c-1.61,5.71-2.93,11.55-3.95,17.49L32.59,240.32Z\"/></svg>","<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"512\" height=\"512\" viewBox=\"0 0 216 216\"><defs>\n    <style>\n      .cls-1, .cls-2 {\n        fill: #231f20;\n      }\n\n      .cls-2 {\n        stroke: #231f20;\n        stroke-miterlimit: 10;\n        stroke-width: 3.51px;\n      }\n    </style>\n  </defs><rect class=\"cls-2\" x=\"159.85\" y=\"24.63\" width=\"28.23\" height=\"90.41\" transform=\"translate(100.34 -102.55) rotate(45)\"/></svg>","<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"512\" height=\"512\" viewBox=\"0 0 216 216\"><defs>\n    <style>\n      .cls-1, .cls-2 {\n        fill: #231f20;\n      }\n\n      .cls-2 {\n        stroke: #231f20;\n        stroke-miterlimit: 10;\n        stroke-width: 3.51px;\n      }\n    </style>\n  </defs><rect class=\"cls-2\" x=\"42.88\" y=\"48.2\" width=\"21.6\" height=\"21.6\"/></svg>"];
+          this.layers = artwork.map((svg,i)=>{
+            const geometry = new T.PlaneGeometry(1.25,1.25,i===0?24:1,i===0?48:1);
+            const material = new T.MeshBasicMaterial({transparent:true,alphaTest:0.02,side:T.DoubleSide,depthWrite:false});
+            const mesh = new T.Mesh(geometry,material);
+            mesh.visible=false;
+            mesh.frustumCulled=false;
+            this.el.object3D.add(mesh);
+            const layer={mesh,geometry,material,original:geometry.attributes.position.array.slice(),loaded:false};
+            new T.TextureLoader().load('data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg),texture=>{
+              if(this.removed){texture.dispose();return;}
+              texture.minFilter=T.LinearFilter;
+              material.map=texture;
+              material.needsUpdate=true;
+              layer.loaded=true;
+            });
+            return layer;
+          });
+        },
+        tick: function(time){
+          const visible=!this.marker||this.marker.object3D.visible;
+          if(!visible){this.wasVisible=false;return;}
+          if(!this.wasVisible){this.start=time;this.wasVisible=true;}
+          const t=((time-this.start)%7600)/1000;
+          const clamp=x=>Math.max(0,Math.min(1,x));
+          const smooth=x=>{x=clamp(x);return x*x*(3-2*x);};
+          const line=this.layers[0],target=this.layers[1],square=this.layers[2];
+          // The target starts escaping before the original ribbon reaches it.
+          const approach=smooth((t-0.35)/3.7);
+          const flee=smooth((t-1.75)/1.65);
+          const lineFade=1-smooth((t-5.0)/1.35);
+          const targetFade=1-smooth((t-3.25)/1.2);
+          line.mesh.position.set(-0.20+0.34*approach,-0.16+0.29*approach,0.012);
+          target.mesh.position.set(0.78*flee,0.82*flee,0.018+0.17*flee);
+          square.mesh.position.set(0,0,0.006);
+          line.material.opacity=lineFade;
+          target.material.opacity=targetFade;
+          square.material.opacity=1;
+          line.mesh.visible=line.loaded&&lineFade>0;
+          target.mesh.visible=target.loaded&&targetFade>0;
+          square.mesh.visible=square.loaded;
+          // Bend the actual SVG ribbon gently, without redrawing its silhouette.
+          const pos=line.geometry.attributes.position;
+          const activity=Math.sin(Math.PI*approach);
+          for(let i=0;i<pos.count;i++){
+            const k=i*3,x=line.original[k],y=line.original[k+1];
+            const weight=clamp((y+0.625)/1.25);
+            const wave=0.045*activity*Math.sin(weight*9-t*4.2)*Math.sin(Math.PI*weight);
+            pos.setXYZ(i,x+wave,y,0);
+          }
+          pos.needsUpdate=true;
+        },
+        remove:function(){
+          this.removed=true;
+          this.layers.forEach(l=>{this.el.object3D.remove(l.mesh);l.geometry.dispose();if(l.material.map)l.material.map.dispose();l.material.dispose();});
+        }
+      });
+    </script>
   </head>
   <body style="margin: 0px; overflow: hidden;">
     <a-scene embedded arjs>
@@ -251,36 +316,8 @@
       </a-marker>
 
       <a-marker type="pattern" url="assets/pattern-357 - Zine Icons-05.patt">
-        
-        <!-- Parent Entity: Handles the spinning spin (Y-axis) and the hopping motion -->
-        <a-entity position="0 0.5 0"
-                  animation__hop="property: position; from: 0 0.5 0; to: 0 1.2 0; dir: alternate; loop: true; dur: 1200; easing: easeInOutSine"
-                  animation__spin="property: rotation; to: 0 360 0; loop: true; dur: 3000; easing: linear">
-          
-          <!-- Child Entity: Tilts the text flat so it rotates horizontally like a rotor blade -->
-          <a-entity rotation="-90 0 0">
-            
-            <!-- Main Text -->
-            <a-text value="LILY IS AWESOME" 
-                    align="center" 
-                    color="#00FF88" 
-                    scale="2 2 2"
-                    side="double">
-            </a-text>
-
-            <!-- Shadow Text Layer for 3D depth -->
-            <a-text value="LILY" 
-                    align="center" 
-                    color="#003311" 
-                    position="0 0 -0.05"
-                    scale="2 2 2"
-                    side="double">
-            </a-text>
-
-          </a-entity>
-          
-        </a-entity>
-
+        <!-- Original SVG: the flowing ribbon reaches toward a rectangle that flies away. -->
+        <a-entity position="0 0.22 0" rotation="-90 0 0" scale="0.95 0.95 0.95" unreachable-target></a-entity>
       </a-marker>
 
       <a-marker type="pattern" url="assets/pattern-357 - Zine Icons-06.patt">
