@@ -128,6 +128,101 @@
         }
       });
     </script>
+    <script>
+      // Icon 04: a journey interrupted at the boundary of a screen.
+      AFRAME.registerComponent('interrupted-journey', {
+        init: function () {
+          const T = AFRAME.THREE;
+          this.marker = this.el.closest('a-marker');
+          this.wasVisible = false;
+          const root = this.el.object3D;
+          this.frame = new T.Group();
+          const ink = new T.MeshBasicMaterial({color:0x231f20});
+          this.frameMaterial = ink;
+          // Four unbroken sides symbolize the screen that remains.
+          [[0,0.59,1.24,0.055],[0,-0.59,1.24,0.055],[-0.59,0,0.055,1.13],[0.59,0,0.055,1.13]].forEach(([x,y,w,h])=>{
+            const mesh = new T.Mesh(new T.PlaneGeometry(w,h),ink);
+            mesh.position.set(x,y,0);
+            this.frame.add(mesh);
+          });
+          root.add(this.frame);
+          // Smooth line, rising from lower left toward the right boundary.
+          const p=(x,y)=>new T.Vector3(x,y,0);
+          this.curve=new T.CurvePath();
+          this.curve.add(new T.CubicBezierCurve3(p(-0.49,-0.40),p(-0.31,-0.40),p(-0.37,-0.08),p(-0.06,-0.09)));
+          this.curve.add(new T.CubicBezierCurve3(p(-0.06,-0.09),p(0.18,-0.10),p(0.08,0.23),p(0.31,0.15)));
+          this.curve.add(new T.CubicBezierCurve3(p(0.31,0.15),p(0.42,0.11),p(0.48,0.19),p(0.562,0.27)));
+          this.path = Array.from({length:161},(_,i)=>this.curve.getPointAt(i/160));
+          this.fragments=[];
+          // Contiguous ribbon sections become separately moving fragments.
+          const count=10, n=16;
+          for(let j=0;j<count;j++){
+            const center=this.path[j*n+8].clone();
+            const positions=new Float32Array((n+1)*6), indices=[];
+            for(let k=0;k<n;k++){const a=k*2;indices.push(a,a+1,a+2,a+1,a+3,a+2);}
+            const geometry=new T.BufferGeometry();
+            geometry.setAttribute('position',new T.BufferAttribute(positions,3).setUsage(T.DynamicDrawUsage));
+            geometry.setIndex(indices);
+            const material=new T.MeshBasicMaterial({color:0x231f20,side:T.DoubleSide,transparent:true,depthWrite:false});
+            const mesh=new T.Mesh(geometry,material);
+            mesh.frustumCulled=false;
+            root.add(mesh);
+            this.fragments.push({mesh,geometry,material,positions,center,j});
+          }
+        },
+        tick: function(time){
+          const visible=!this.marker||this.marker.object3D.visible;
+          if(!visible){this.wasVisible=false;return;}
+          if(!this.wasVisible){this.start=time;this.wasVisible=true;}
+          const t=((time-this.start)%7800)/1000;
+          // Flow for 2.8 seconds; stop completely at the screen's edge.
+          const progress=Math.min(1,Math.max(0,(t-0.30)/2.50));
+          const moving=t<2.8;
+          // Freeze for 0.35 seconds, then break apart, like a disrupted video call.
+          const broken=t>=3.15;
+          const scatter=broken?Math.min(1,(t-3.15)/1.35):0;
+          const ease=1-Math.pow(1-scatter,3);
+          const fade=t<5.0?1:Math.max(0,1-(t-5.0)/1.55);
+          this.fragments.forEach(f=>{
+            const start=f.j*16;
+            const end=Math.min(160,Math.floor(progress*160));
+            f.mesh.visible=end>start&&fade>0;
+            if(!f.mesh.visible)return;
+            const shrink=broken?Math.min(2.4,ease*2.4):0;
+            const lo=start+shrink,hi=Math.min(start+16-shrink,end);
+            if(hi<=lo){f.mesh.visible=false;return;}
+            for(let k=0;k<=16;k++){
+              const idx=lo+(hi-lo)*k/16;
+              const a=Math.floor(idx), b=Math.min(160,a+1);
+              const v=this.path[a].clone().lerp(this.path[b],idx-a);
+              const tangent=this.path[Math.min(160,a+1)].clone().sub(this.path[Math.max(0,a-1)]).normalize();
+              const u=idx/160;
+              // A small traveling wave fades away at the exact instant of impact.
+              const wave=moving?0.037*Math.sin(u*13-t*4)*Math.sin(Math.PI*u)*Math.min(1,(1-progress)*8):0;
+              const width=0.043*(0.8+0.2*Math.sin(Math.PI*u));
+              const x=v.x-tangent.y*wave-f.center.x,y=v.y+tangent.x*wave-f.center.y;
+              const offset=k*6;
+              f.positions.set([x-tangent.y*width,y+tangent.x*width,0.012,x+tangent.y*width,y-tangent.x*width,0.012],offset);
+            }
+            f.geometry.attributes.position.needsUpdate=true;
+            const direction=f.j%2===0?1:-1;
+            const dx=broken?(-0.045-0.035*Math.sin(f.j*2.8))*ease:0;
+            const dy=broken?direction*(0.045+0.018*(f.j%3))*ease:0;
+            const glitch=broken&&scatter<0.40?Math.sin(t*85+f.j*2)*0.018*(1-scatter/0.40):0;
+            f.mesh.position.set(f.center.x+dx+glitch,f.center.y+dy,0.01+f.j*0.0005);
+            f.mesh.rotation.z=broken?direction*0.20*ease:0;
+            f.material.opacity=fade;
+          });
+          // The frame stays intact as the line fades, followed by a quiet pause.
+        },
+        remove: function(){
+          this.el.object3D.remove(this.frame);
+          this.frame.children.forEach(m=>m.geometry.dispose());
+          this.frameMaterial.dispose();
+          this.fragments.forEach(f=>{this.el.object3D.remove(f.mesh);f.geometry.dispose();f.material.dispose();});
+        }
+      });
+    </script>
   </head>
   <body style="margin: 0px; overflow: hidden;">
     <a-scene embedded arjs>
@@ -151,36 +246,8 @@
       </a-marker>
 
       <a-marker type="pattern" url="assets/pattern-357 - Zine Icons-04.patt">
-        
-        <!-- Parent Entity: Handles the spinning spin (Y-axis) and the hopping motion -->
-        <a-entity position="0 0.5 0"
-                  animation__hop="property: position; from: 0 0.5 0; to: 0 1.2 0; dir: alternate; loop: true; dur: 1200; easing: easeInOutSine"
-                  animation__spin="property: rotation; to: 0 360 0; loop: true; dur: 3000; easing: linear">
-          
-          <!-- Child Entity: Tilts the text flat so it rotates horizontally like a rotor blade -->
-          <a-entity rotation="-90 0 0">
-            
-            <!-- Main Text -->
-            <a-text value="LILY IS AWESOME" 
-                    align="center" 
-                    color="#00FF88" 
-                    scale="2 2 2"
-                    side="double">
-            </a-text>
-
-            <!-- Shadow Text Layer for 3D depth -->
-            <a-text value="LILY" 
-                    align="center" 
-                    color="#003311" 
-                    position="0 0 -0.05"
-                    scale="2 2 2"
-                    side="double">
-            </a-text>
-
-          </a-entity>
-          
-        </a-entity>
-
+        <!-- A flowing line attempts to escape a square screen, stops, and fragments. -->
+        <a-entity position="0 0.22 0" rotation="-90 0 0" scale="0.95 0.95 0.95" interrupted-journey></a-entity>
       </a-marker>
 
       <a-marker type="pattern" url="assets/pattern-357 - Zine Icons-05.patt">
